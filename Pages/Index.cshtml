@@ -1,0 +1,124 @@
+﻿@page
+@model CalendarApp.Pages.IndexModel
+
+@{
+    DateTime baseMonth;
+    if (!DateTime.TryParse($"{Model.CurrentMonth.Year}-{Model.CurrentMonth.Month}-01", out baseMonth))
+    {
+        baseMonth = DateTime.Now;
+    }
+
+    var monthDisplay = baseMonth.ToString("MMMM yyyy");
+}
+
+<h2>Calendar - @monthDisplay</h2>
+
+<div>
+    <a asp-page="./Index" asp-route-monthOffset="-1" asp-route-currentMonth="@Model.CurrentMonth.ToString("yyyy-MM")">Previous</a> |
+<a asp-page="./Index" asp-route-monthOffset="1" asp-route-currentMonth="@Model.CurrentMonth.ToString("yyyy-MM")">Next</a>
+
+
+</div>
+
+<table border="1" style="border-collapse: collapse; width: 100%;">
+    <tr>
+        <th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+    </tr>
+
+    <tr>
+        @for (int i = 0; i < Model.StartOffset; i++)
+        {
+            <td></td>
+        }
+
+        @for (int i = 0; i < Model.Days.Count; i++)
+        {
+            var day = Model.Days[i];
+            DateTime dateTime = new(Model.CurrentMonth.Year, Model.CurrentMonth.Month, day);
+            var dateStr = dateTime.ToString("yyyy-MM-dd");
+            var hasEvent = Model.Events.ContainsKey(dateStr);
+            var dayOfWeek = dateTime.ToString("dddd");
+
+            <td valign="top" style="padding: 5px; height: 100px; color:@(hasEvent ? "green" : "black")">
+               <a asp-page="./Index" 
+   asp-route-selectedDate="@dateStr" 
+   asp-route-monthOffset="0" 
+   asp-route-currentMonth="@Model.CurrentMonth.ToString("yyyy-MM")" 
+   style="text-decoration:none; color:inherit;">
+
+                    <strong>@day</strong><br />
+                    <em style="font-size:smaller;">@dayOfWeek</em><br />
+                </a>
+
+                @if (hasEvent)
+                {
+                    foreach (var evt in Model.Events[dateStr].Descriptions)
+                    {
+                        <div style="font-size:x-small; margin-top:2px;">• @evt</div>
+                    }
+                }
+            </td>
+
+            @if (((i + Model.StartOffset + 1) % 7 == 0) && (i != Model.Days.Count - 1))
+            {
+                @:</tr><tr>
+            }
+        }
+
+        @for (int i = 0; (Model.Days.Count + Model.StartOffset + i) % 7 != 0; i++)
+        {
+            <td></td>
+        }
+    </tr>
+</table>
+
+<form method="post">
+    <label>Select Date:</label>
+    <input type="date" name="date" required />
+    <br />
+
+    <label>Event Description:</label><br />
+    <input type="text" name="description" placeholder="e.g. Dentist Appointment" required />
+    <br />
+
+    <input type="hidden" name="currentMonth" value="@Model.CurrentMonth.ToString("yyyy-MM")" />
+
+    <button type="submit">Add Event</button>
+</form>
+
+@if (Model.SelectedDate != null && Model.Events.ContainsKey(Model.SelectedDate))
+{
+    <hr />
+    <h3>Events on @DateTime.Parse(Model.SelectedDate).ToString("MMMM dd, yyyy")</h3>
+    <ul>
+        @foreach (var evt in Model.Events[Model.SelectedDate].Descriptions)
+        {
+            <li>
+                @evt
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="deleteDate" value="@Model.SelectedDate" />
+                    <input type="hidden" name="deleteDescription" value="@evt" />
+                    <input type="hidden" name="currentMonth" value="@Model.CurrentMonth.ToString("yyyy-MM")" />
+                    <button type="submit" style="font-size:x-small;">Delete</button>
+                </form>
+            </li>
+        }
+    </ul>
+}
+else if (Model.SelectedDate != null)
+{
+    <hr />
+    <h3>No events on @DateTime.Parse(Model.SelectedDate).ToString("MMMM dd, yyyy")</h3>
+}
+
+@section Scripts {
+    <script>
+        document.querySelector('form').addEventListener('submit', function (e) {
+            const dateInput = document.querySelector('input[type="date"]');
+            if (dateInput && !dateInput.value) {
+                e.preventDefault();
+                alert('Please select a date');
+            }
+        });
+    </script>
+}
