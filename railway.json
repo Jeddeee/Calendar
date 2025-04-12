@@ -1,0 +1,9 @@
+{
+  "build": {
+    "env": "dotnet",
+    "installCommand": "dotnet restore",
+    "buildCommand": "dotnet publish CalendarApp.csproj -c Release -o out",
+    "startCommand": "dotnet out/CalendarApp.dll",
+    "rootDirectory": "CalendarApp"
+  }
+}
